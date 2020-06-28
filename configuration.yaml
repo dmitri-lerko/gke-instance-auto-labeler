@@ -1,0 +1,14 @@
+projects:
+  - gcp-project-1
+  - gcp-project-2
+labels:
+  search:
+    team: search
+    purpose: hosts-search-applications
+  system:
+    team: devops
+    purpose: logging-and-monitoring
+  transcoding:
+    team: digital
+    purpose: transcode-videos
+    preemptible: "true"

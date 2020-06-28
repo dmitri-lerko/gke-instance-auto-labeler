@@ -1,0 +1,9 @@
+title: GKE Instance Auto Labeler
+description: Role for GKE Instance Auto Labeler Cloud Function
+stage: GA
+includedPermissions:
+- compute.disks.get
+- compute.disks.setLabels
+- compute.instances.list
+- compute.instances.setLabels
+- compute.zones.list
