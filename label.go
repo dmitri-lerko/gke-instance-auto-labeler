@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/pubsub/v1"
@@ -19,7 +20,6 @@ type Config struct {
 }
 
 func GKEInstanceAutoLabeler(ctx context.Context, _ pubsub.PubsubMessage) error {
-
 	filename, _ := filepath.Abs("./configuration.yaml")
 	yamlFile, err := ioutil.ReadFile(filename)
 
@@ -45,41 +45,52 @@ func GKEInstanceAutoLabeler(ctx context.Context, _ pubsub.PubsubMessage) error {
 
 func setLabelsOnInstances(ctx context.Context, config Config) error {
 
-	// Only check/set labels on running instances
-	filters := [...]string{
-		"status = RUNNING",
-	}
 	computeService, err := compute.NewService(ctx)
 	if err != nil {
 		fmt.Println("Error", err)
 		logging.Logger.Error(fmt.Sprintf("Could not create compute service. Error: %s", err))
 		return err
 	}
+
+	var wg sync.WaitGroup
 	for _, project := range config.Projects {
-		zoneListCall := computeService.Zones.List(project)
-		zoneList, err := zoneListCall.Do()
+		wg.Add(1)
+		go evaluateProject(ctx, config, project, *computeService, &wg)
+	}
+	wg.Wait()
+
+	return nil
+}
+
+func evaluateProject(ctx context.Context, config Config, project string, computeService compute.Service, wg *sync.WaitGroup) error {
+	defer wg.Done()
+
+	// Only check/set labels on running instances
+	filters := [...]string{
+		"status = RUNNING",
+	}
+
+	zoneListCall := computeService.Zones.List(project)
+	zoneList, err := zoneListCall.Do()
+	if err != nil {
+		logging.Logger.Debug(fmt.Sprintf("Could not list zones in project %s Skipping...", project))
+		return err
+	}
+
+	for _, zone := range zoneList.Items {
+		instanceListCall := computeService.Instances.List(project, zone.Name)
+		instanceListCall.Filter(strings.Join(filters[:], " "))
+		instanceList, err := instanceListCall.Do()
 		if err != nil {
-			logging.Logger.Debug(fmt.Sprintf("Could not list zones in project %s Skipping...", project))
+			logging.Logger.Error(fmt.Sprintf("Could not get a list of instances in project %s zone %s", project, zone.Name))
 			return err
 		}
 
-		for _, zone := range zoneList.Items {
+		for _, instance := range instanceList.Items {
 
-			instanceListCall := computeService.Instances.List(project, zone.Name)
-			instanceListCall.Filter(strings.Join(filters[:], " "))
-			instanceList, err := instanceListCall.Do()
-			if err != nil {
-				logging.Logger.Error(fmt.Sprintf("Could not get a list of instances in project %s zone %s", project, zone.Name))
-				return err
-			}
-
-			for _, instance := range instanceList.Items {
-
-				reconcileInstanceLabels(ctx, *computeService, *instance, config, project)
-			}
+			reconcileInstanceLabels(ctx, computeService, *instance, config, project)
 		}
 	}
-
 	return nil
 }
 
