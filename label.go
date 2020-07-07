@@ -46,10 +46,10 @@ func setLabelsOnInstances(ctx context.Context) error {
 		return err
 	}
 
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 	for _, project := range config.Projects {
 		wg.Add(1)
-		go evaluateProject(ctx, *config, project, *computeService, &wg)
+		go evaluateProject(ctx, *config, project, *computeService, wg)
 	}
 	wg.Wait()
 
