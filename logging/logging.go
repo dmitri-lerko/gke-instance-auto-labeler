@@ -8,13 +8,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var Logger *zap.Logger
+var Logger *zap.SugaredLogger
 
 func init() {
-	var err error
-	Logger, err = zap.Config{
+	unSugaredLogger, err := zap.Config{
 		Encoding:         "json",
-		Level:            zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		Level:            zap.NewAtomicLevelAt(zapcore.DebugLevel),
 		OutputPaths:      []string{"stderr"},
 		ErrorOutputPaths: []string{"stderr"},
 		EncoderConfig: zapcore.EncoderConfig{
@@ -34,5 +33,8 @@ func init() {
 	if err != nil {
 		fmt.Println(err.Error())
 		syscall.Exit(1)
+		return
 	}
+
+	Logger = unSugaredLogger.Sugar()
 }
