@@ -29,7 +29,7 @@ labels:
     purpose: transcode-videos
     preemptible: "true"
 ```
-If you have an instance with the name gke-prod-transcode-videos-7ebf06e4-jds5, it will match `transcoding` and set relevant labels.
+If you have an instance with the name gke-prod-transcode-videos-7ebf06e4-jds5, it will match `transcode` and set relevant labels.
 `Map map[team:digital purpose:transcode-videos preemptible:true] is not a subset map[goog-gke-node:]`
 
 ## Proposed configuration
