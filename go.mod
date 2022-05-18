@@ -8,5 +8,5 @@ require (
 	go.uber.org/zap v1.14.1
 	google.golang.org/api v0.21.0
 	google.golang.org/genproto v0.0.0-20200406120821-33397c535dc2 // indirect
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.8
 )
